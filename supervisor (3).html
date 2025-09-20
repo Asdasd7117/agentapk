@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>لوحة المشرف</title>
+<style>
+body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f0f4f8; }
+.container { max-width:1200px; margin:20px auto; padding:20px; }
+h2 { text-align:center; color:#0277bd; margin-bottom:20px; }
+
+/* التبويبات */
+.tabs { display:flex; border-bottom:2px solid #ccc; margin-bottom:20px; }
+.tab {
+  flex:1; text-align:center; padding:12px; cursor:pointer; font-weight:bold;
+  border-radius:10px 10px 0 0; transition:0.3s;
+}
+.tab.active { border-bottom:3px solid #0288d1; color:#fff; }
+
+/* ألوان التبويبات */
+.tab-tasks { background:#e1f5fe; }
+.tab-reports { background:#f1f8e9; }
+.tab-notifications { background:#fff3e0; }
+.tab-orders { background:#fce4ec; }
+.tab.active.tab-tasks { background:#0288d1; }
+.tab.active.tab-reports { background:#689f38; }
+.tab.active.tab-notifications { background:#ef6c00; }
+.tab.active.tab-orders { background:#ad1457; }
+
+/* محتوى التبويبات */
+.tab-content { display:none; padding:20px; background:#fff; border-radius:0 0 12px 12px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+.tab-content.active { display:block; }
+
+table { width:100%; border-collapse: collapse; margin-top:10px; background:#fafafa; }
+table, th, td { border:1px solid #ddd; }
+th, td { padding:8px; text-align:center; }
+input, select, textarea { padding:8px; margin:5px 0; border-radius:6px; border:1px solid #ccc; width:100%; }
+button { background:#0288d1; color:#fff; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; }
+button:hover { background:#0277bd; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>لوحة المشرف</h2>
+
+  <!-- اختيار المندوب -->
+  <section>
+    <label><b>اختر المندوب:</b>
+      <select id="filterAgent">
+        <option value="">الكل</option>
+      </select>
+    </label>
+  </section>
+
+  <!-- التبويبات -->
+  <div class="tabs">
+    <div class="tab tab-tasks active" data-tab="tasks">المهام</div>
+    <div class="tab tab-reports" data-tab="reports">التقارير</div>
+    <div class="tab tab-notifications" data-tab="notifications">الإشعارات</div>
+    <div class="tab tab-orders" data-tab="orders">طلبات العملاء</div>
+  </div>
+
+  <!-- المحتويات -->
+  <div id="tasks" class="tab-content active">
+    <h3>المهام</h3>
+    <table>
+      <thead id="tasksHeader"></thead>
+      <tbody id="tasksTableBody"></tbody>
+    </table>
+  </div>
+
+  <div id="reports" class="tab-content">
+    <h3>التقارير</h3>
+    <table>
+      <thead id="reportsHeader"></thead>
+      <tbody id="reportsTableBody"></tbody>
+    </table>
+  </div>
+
+  <div id="notifications" class="tab-content">
+    <h3>الإشعارات</h3>
+    <table>
+      <thead id="notificationsHeader"></thead>
+      <tbody id="notificationsTableBody"></tbody>
+    </table>
+  </div>
+
+  <div id="orders" class="tab-content">
+    <h3>إضافة طلب عميل</h3>
+    <form id="orderForm">
+      <label>اسم العميل:</label>
+      <input type="text" id="customerName" required>
+      <label>العنوان:</label>
+      <input type="text" id="customerAddress" required>
+      <label>رقم الهاتف:</label>
+      <input type="text" id="customerPhone" required>
+      <label>الطلبات:</label>
+      <textarea id="customerOrders" required></textarea>
+      <label>السعر:</label>
+      <input type="number" id="orderPrice" required>
+      <label>المجموع:</label>
+      <input type="number" id="orderTotal" required>
+      <button type="submit">إرسال الطلب</button>
+    </form>
+    <hr>
+    <h3>قائمة الطلبات</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>اسم العميل</th>
+          <th>العنوان</th>
+          <th>الهاتف</th>
+          <th>الطلبات</th>
+          <th>السعر</th>
+          <th>المجموع</th>
+        </tr>
+      </thead>
+      <tbody id="ordersTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+const supabaseUrl = "https://vkativialsvvbifhjrey.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrYXRpdmlhbHN2dmJpZmhqcmV5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODEwMzEwNSwiZXhwIjoyMDczNjc5MTA1fQ.xUR96RId88zr0VhJNuxEy55FSKUFTRVqxJQMMHNkoMY"; // 🔴 غيّرها بمفتاحك
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// تفعيل التبويبات
+document.querySelectorAll(".tab").forEach(tab=>{
+  tab.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c=>c.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(tab.dataset.tab).classList.add("active");
+  });
+});
+
+// تحميل المندوبين
+async function loadAgents(){
+  const { data: agents } = await supabase.from('users').select('*').eq('role','agent');
+  const select = document.getElementById('filterAgent');
+  agents.forEach(a=>{
+    const opt = document.createElement('option');
+    opt.value = a.id;
+    opt.text = a.email || a.id;
+    select.appendChild(opt);
+  });
+}
+
+// تحميل المهام
+async function loadTasks(agentId=null){
+  let query = supabase.from('tasks').select('*');
+  if(agentId) query = query.eq('assigned_to', agentId);
+  const { data: tasks } = await query;
+  const tbody = document.getElementById('tasksTableBody');
+  const thead = document.getElementById('tasksHeader');
+  tbody.innerHTML=''; thead.innerHTML='';
+  if(tasks?.length){
+    const headerRow = document.createElement('tr');
+    Object.keys(tasks[0]).forEach(k=>{
+      const th = document.createElement('th'); th.textContent = k; headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    tasks.forEach(t=>{
+      const tr = document.createElement('tr');
+      Object.keys(t).forEach(k=>{
+        const td = document.createElement('td'); td.textContent = t[k] || '-'; tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+}
+
+// تحميل التقارير
+async function loadReports(agentId=null){
+  let query = supabase.from('reports').select('*');
+  if(agentId) query = query.eq('agent_id', agentId);
+  const { data: reports } = await query;
+  const tbody = document.getElementById('reportsTableBody');
+  const thead = document.getElementById('reportsHeader');
+  tbody.innerHTML=''; thead.innerHTML='';
+  if(reports?.length){
+    const headerRow = document.createElement('tr');
+    Object.keys(reports[0]).forEach(k=>{
+      const th = document.createElement('th'); th.textContent = k; headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    reports.forEach(r=>{
+      const tr = document.createElement('tr');
+      Object.keys(r).forEach(k=>{
+        const td = document.createElement('td'); td.textContent = r[k] || '-'; tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+}
+
+// تحميل الإشعارات
+async function loadNotifications(agentId=null){
+  let query = supabase.from('notifications').select('*');
+  if(agentId) query = query.eq('user_id', agentId);
+  const { data: notifications } = await query;
+  const tbody = document.getElementById('notificationsTableBody');
+  const thead = document.getElementById('notificationsHeader');
+  tbody.innerHTML=''; thead.innerHTML='';
+  if(notifications?.length){
+    const headerRow = document.createElement('tr');
+    Object.keys(notifications[0]).forEach(k=>{
+      const th = document.createElement('th'); th.textContent = k; headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    notifications.forEach(n=>{
+      const tr = document.createElement('tr');
+      Object.keys(n).forEach(k=>{
+        const td = document.createElement('td'); td.textContent = n[k] || '-'; tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+}
+
+// إرسال الطلب
+document.getElementById("orderForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const order = {
+    customer_name: document.getElementById("customerName").value,
+    customer_address: document.getElementById("customerAddress").value,
+    customer_phone: document.getElementById("customerPhone").value,
+    orders: document.getElementById("customerOrders").value,
+    price: parseFloat(document.getElementById("orderPrice").value),
+    total: parseFloat(document.getElementById("orderTotal").value)
+  };
+  const { error } = await supabase.from("orders").insert([order]);
+  if(error) alert("خطأ: "+error.message); else {
+    alert("تم إضافة الطلب");
+    document.getElementById("orderForm").reset();
+    loadOrders();
+  }
+});
+
+// تحميل الطلبات
+async function loadOrders(){
+  const { data: orders } = await supabase.from("orders").select("*").order("id",{ascending:false});
+  const tbody = document.getElementById("ordersTableBody");
+  tbody.innerHTML='';
+  orders?.forEach(o=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${o.customer_name}</td>
+      <td>${o.customer_address}</td>
+      <td>${o.customer_phone}</td>
+      <td>${o.orders}</td>
+      <td>${o.price}</td>
+      <td>${o.total}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// اختيار المندوب
+document.getElementById('filterAgent').addEventListener('change', e=>{
+  const agentId = e.target.value || null;
+  loadTasks(agentId);
+  loadReports(agentId);
+  loadNotifications(agentId);
+});
+
+// تشغيل أولي
+loadAgents().then(()=>{
+  loadTasks();
+  loadReports();
+  loadNotifications();
+  loadOrders();
+});
+</script>
+</body>
+</html>
