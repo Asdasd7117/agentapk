@@ -30,6 +30,7 @@ button.primary { background:#0288d1; color:#fff; border:none; cursor:pointer; pa
   <button id="performanceTab">الأداء الميداني</button>
   <button id="usersTab">حسابات المستخدمين</button>
 </nav>
+
 <section id="tasksSection" class="active">
   <h3>إنشاء مهمة جديدة</h3>
   <form id="taskForm">
@@ -51,19 +52,24 @@ button.primary { background:#0288d1; color:#fff; border:none; cursor:pointer; pa
     <tbody id="tasksTableBody"></tbody>
   </table>
 </section>
+
 <section id="notificationsSection">
   <h3>إرسال إشعار لمندوب محدد أو للجميع</h3>
   <select id="notifySelect"><option value="all">إلى الجميع</option></select>
   <textarea id="notificationMessage" placeholder="اكتب الرسالة هنا"></textarea>
   <button id="sendNotificationBtn" class="primary">إرسال الإشعار</button>
 </section>
+
 <section id="reportsSection">
   <h3>تقارير المندوبين</h3>
   <table>
-    <thead><tr><th>المندوب</th><th>العميل</th><th>التقرير</th><th>الصورة</th></tr></thead>
+    <thead>
+      <tr><th>المندوب</th><th>العميل</th><th>التقرير</th><th>الصورة</th><th>الموقع</th></tr>
+    </thead>
     <tbody id="reportsTableBody"></tbody>
   </table>
 </section>
+
 <section id="performanceSection">
   <h3>الأداء الميداني</h3>
   <table>
@@ -73,6 +79,7 @@ button.primary { background:#0288d1; color:#fff; border:none; cursor:pointer; pa
     <tbody id="performanceTableBody"></tbody>
   </table>
 </section>
+
 <section id="usersSection">
   <h3>إدارة حسابات المندوب والمشرف</h3>
   <form id="createUserForm">
@@ -94,12 +101,12 @@ button.primary { background:#0288d1; color:#fff; border:none; cursor:pointer; pa
   </table>
 </section>
 </div>
+
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 const SUPABASE_URL = 'https://vkativialsvvbifhjrey.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrYXRpdmlhbHN2dmJpZmhqcmV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxMDMxMDUsImV4cCI6MjA3MzY3OTEwNX0.iC-gq-uuXnK_1cJ_gYcjig8sr-bQfhqPk0SnuqbAeL0';
-
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -116,50 +123,44 @@ document.addEventListener('DOMContentLoaded', async () => {
   let agents = [];
 
   async function loadAgents() {
-    try {
-      const { data, error } = await supabase.from('users').select('id,email,role').eq('role', 'agent');
-      if (error) throw error;
-      agents = data || [];
-      const assignedTo = document.getElementById('assignedTo');
-      const notifySelect = document.getElementById('notifySelect');
-      assignedTo.innerHTML = '<option value="">اختر مندوب</option>';
-      notifySelect.innerHTML = '<option value="all">إلى الجميع</option>';
-      agents.forEach(a => {
-        const o1 = document.createElement('option'); o1.value = a.id; o1.textContent = a.email; assignedTo.appendChild(o1);
-        const o2 = document.createElement('option'); o2.value = a.id; o2.textContent = a.email; notifySelect.appendChild(o2);
-      });
-    } catch (err) { console.error('خطأ جلب المناديب:', err); }
+    const { data, error } = await supabase.from('users').select('id,email,role').eq('role', 'agent');
+    if (error) return console.error(error);
+    agents = data || [];
+    const assignedTo = document.getElementById('assignedTo');
+    const notifySelect = document.getElementById('notifySelect');
+    assignedTo.innerHTML = '<option value="">اختر مندوب</option>';
+    notifySelect.innerHTML = '<option value="all">إلى الجميع</option>';
+    agents.forEach(a => {
+      const o1 = document.createElement('option'); o1.value = a.id; o1.textContent = a.email; assignedTo.appendChild(o1);
+      const o2 = document.createElement('option'); o2.value = a.id; o2.textContent = a.email; notifySelect.appendChild(o2);
+    });
   }
 
   async function loadTasks() {
-    try {
-      const { data: tasks } = await supabase.from('tasks').select('*').order('created_at', { ascending: false });
-      const tbody = document.getElementById('tasksTableBody');
-      tbody.innerHTML = '';
-      tasks.forEach(t => {
-        const agent = agents.find(a => a.id === t.assigned_to);
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${t.client_name || '-'}</td><td>${t.client_address || '-'}</td><td>${t.visit_time || '-'}</td><td>${agent?.email || '-'}</td><td>${t.status || '-'}</td><td><button data-id="${t.id}" class="deleteTaskBtn">حذف</button></td>`;
-        tbody.appendChild(tr);
-      });
-    } catch (err) { console.error('خطأ تحميل المهام:', err); }
+    const { data: tasks } = await supabase.from('tasks').select('*').order('created_at', { ascending: false });
+    const tbody = document.getElementById('tasksTableBody');
+    tbody.innerHTML = '';
+    tasks.forEach(t => {
+      const agent = agents.find(a => a.id === t.assigned_to);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${t.client_name || '-'}</td><td>${t.client_address || '-'}</td><td>${t.visit_time || '-'}</td><td>${agent?.email || '-'}</td><td>${t.status || '-'}</td><td><button data-id="${t.id}" class="deleteTaskBtn">حذف</button></td>`;
+      tbody.appendChild(tr);
+    });
   }
 
   async function loadPerformance() {
-    try {
-      const { data: tasks } = await supabase.from('tasks').select('assigned_to, status');
-      const tbody = document.getElementById('performanceTableBody');
-      tbody.innerHTML = '';
-      agents.forEach(a => {
-        const agentTasks = tasks.filter(t => t.assigned_to === a.id);
-        const inProgress = agentTasks.filter(t => t.status === 'pending').length;
-        const delayed = agentTasks.filter(t => t.status === 'delayed').length;
-        const completed = agentTasks.filter(t => t.status === 'completed').length;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${a.email || '-'}</td><td>${inProgress}</td><td>${delayed}</td><td>${completed}</td>`;
-        tbody.appendChild(tr);
-      });
-    } catch (err) { console.error('خطأ تحميل الأداء الميداني:', err); }
+    const { data: tasks } = await supabase.from('tasks').select('assigned_to, status');
+    const tbody = document.getElementById('performanceTableBody');
+    tbody.innerHTML = '';
+    agents.forEach(a => {
+      const agentTasks = tasks.filter(t => t.assigned_to === a.id);
+      const inProgress = agentTasks.filter(t => t.status === 'pending').length;
+      const delayed = agentTasks.filter(t => t.status === 'delayed').length;
+      const completed = agentTasks.filter(t => t.status === 'completed').length;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${a.email || '-'}</td><td>${inProgress}</td><td>${delayed}</td><td>${completed}</td>`;
+      tbody.appendChild(tr);
+    });
   }
 
   document.getElementById('tasksTableBody').addEventListener('click', async e => {
@@ -208,7 +209,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       const agent = agents.find(a => a.id === r.agent_id);
       const task = tasks.find(t => t.id === r.task_id);
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${agent?.email || '-'}</td><td>${task?.client_name || '-'}</td><td>${r.report_text || '-'}</td><td>${r.image_url ? `<a href="${r.image_url}" target="_blank">رابط الصورة</a>` : '-'}</td>`;
+      tr.innerHTML = `
+        <td>${agent?.email || '-'}</td>
+        <td>${task?.client_name || '-'}</td>
+        <td>${r.report_text || '-'}</td>
+        <td>${r.image_url ? `<a href="${r.image_url}" target="_blank">📷 صورة</a>` : '-'}</td>
+        <td>${r.location ? `<a href="${r.location}" target="_blank">📍 الموقع</a>` : '-'}</td>
+      `;
       tbody.appendChild(tr);
     });
   }
@@ -247,12 +254,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (signUpError) throw signUpError;
       const userId = data.user?.id;
       if (!userId) throw new Error('لم يتم الحصول على معرف المستخدم من Auth');
-      const { error: insertError } = await supabase.from('users').insert([{
-        id: userId,
-        email,
-        role,
-        password: 'default123'
-      }]);
+      const { error: insertError } = await supabase.from('users').insert([{ id: userId, email, role, password: 'default123' }]);
       if (insertError) throw insertError;
       alert('تم إنشاء الحساب بنجاح');
       e.target.reset();
