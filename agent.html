@@ -41,20 +41,10 @@
     background: #388e3c;
     box-shadow: 0 3px 8px rgba(0,0,0,0.2);
   }
-  nav button:hover {
-    background: #2e7d32;
-  }
-  section {
-    display: none;
-    margin-bottom: 25px;
-  }
-  section.active {
-    display: block;
-  }
-  h3 {
-    margin-bottom: 15px;
-    color: #388e3c;
-  }
+  nav button:hover { background: #2e7d32; }
+  section { display: none; margin-bottom: 25px; }
+  section.active { display: block; }
+  h3 { margin-bottom: 15px; color: #388e3c; }
   .tasks-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill,minmax(250px,1fr));
@@ -67,20 +57,12 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     transition: transform 0.2s;
   }
-  .task-card:hover {
-    transform: translateY(-3px);
-  }
-  .pending { background: #e53935; }    /* قيد التنفيذ */
-  .completed { background: #43a047; }  /* تم التنفيذ */
-  .delayed { background: #fbc02d; color: #000; } /* مؤجلة */
-  .task-card h4 {
-    margin: 0 0 10px 0;
-    font-size: 16px;
-  }
-  .task-card p {
-    margin: 5px 0;
-    font-size: 14px;
-  }
+  .task-card:hover { transform: translateY(-3px); }
+  .pending { background: #e53935; }
+  .completed { background: #43a047; }
+  .delayed { background: #fbc02d; color: #000; }
+  .task-card h4 { margin: 0 0 10px 0; font-size: 16px; }
+  .task-card p { margin: 5px 0; font-size: 14px; }
   select, textarea, input[type="file"], button {
     padding: 10px;
     margin: 7px 0;
@@ -88,11 +70,7 @@
     border: 1px solid #ccc;
     font-size: 14px;
   }
-  textarea {
-    width: 100%;
-    min-height: 100px;
-    resize: vertical;
-  }
+  textarea { width: 100%; min-height: 100px; resize: vertical; }
   button.submit-btn {
     background: #4caf50;
     color: #fff;
@@ -101,13 +79,8 @@
     border: none;
     transition: 0.3s;
   }
-  button.submit-btn:hover {
-    background: #388e3c;
-  }
-  ul {
-    list-style: none;
-    padding: 0;
-  }
+  button.submit-btn:hover { background: #388e3c; }
+  ul { list-style: none; padding: 0; }
   ul li {
     background: #f9f9f9;
     margin-bottom: 10px;
@@ -155,7 +128,7 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 const supabaseUrl = "https://vkativialsvvbifhjrey.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrYXRpdmlhbHN2dmJpZmhqcmV5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODEwMzEwNSwiZXhwIjoyMDczNjc5MTA1fQ.xUR96RId88zr0VhJNuxEy55FSKUFTRVqxJQMMHNkoMY"; // ⚠️ ضع هنا Anon Key فقط
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrYXRpdmlhbHN2dmJpZmhqcmV5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODEwMzEwNSwiZXhwIjoyMDczNjc5MTA1fQ.xUR96RId88zr0VhJNuxEy55FSKUFTRVqxJQMMHNkoMY";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 let agentId = null;
@@ -249,7 +222,7 @@ async function loadNotifications(){
   });
 }
 
-// رفع تقرير
+// رفع تقرير مع الموقع
 document.getElementById('reportForm').addEventListener('submit', async e=>{
   e.preventDefault();
   const taskId = document.getElementById('taskSelect').value;
@@ -257,15 +230,29 @@ document.getElementById('reportForm').addEventListener('submit', async e=>{
   const file = document.getElementById('reportImage').files[0];
   if(!file) return alert('اختر صورة');
 
-  const fileExt = file.name.split('.').pop();
-  const fileName = `reports/${taskId}_${Date.now()}.${fileExt}`;
-  const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
-  if(uploadError) return alert('خطأ رفع الصورة: '+uploadError.message);
+  navigator.geolocation.getCurrentPosition(async position=>{
+    const lat = position.coords.latitude;
+    const lng = position.coords.longitude;
 
-  const imageUrl = `${supabaseUrl}/storage/v1/object/public/reports/${fileName}`;
-  await supabase.from('reports').insert([{ task_id: taskId, agent_id: agentId, report_text: reportText, image_url: imageUrl }]);
-  alert('تم رفع التقرير بنجاح');
-  document.getElementById('reportForm').reset();
+    const fileExt = file.name.split('.').pop();
+    const fileName = `reports/${taskId}_${Date.now()}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
+    if(uploadError) return alert('خطأ رفع الصورة: '+uploadError.message);
+
+    const imageUrl = `${supabaseUrl}/storage/v1/object/public/reports/${fileName}`;
+    await supabase.from('reports').insert([{
+      task_id: taskId,
+      agent_id: agentId,
+      report_text: reportText,
+      image_url: imageUrl,
+      latitude: lat,
+      longitude: lng
+    }]);
+    alert('تم رفع التقرير بنجاح');
+    document.getElementById('reportForm').reset();
+  }, err=>{
+    alert('فشل تحديد الموقع: '+err.message);
+  });
 });
 </script>
 </body>
