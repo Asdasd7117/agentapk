@@ -214,7 +214,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         <td>${task?.client_name || '-'}</td>
         <td>${r.report_text || '-'}</td>
         <td>${r.image_url ? `<a href="${r.image_url}" target="_blank">📷 صورة</a>` : '-'}</td>
-        <td>${r.location ? `<a href="${r.location}" target="_blank">📍 الموقع</a>` : '-'}</td>
+        <td>${(r.latitude && r.longitude) 
+              ? `<a href="https://www.google.com/maps?q=${r.latitude},${r.longitude}" target="_blank">📍 الموقع</a>` 
+              : '-'}</td>
       `;
       tbody.appendChild(tr);
     });
